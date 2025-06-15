@@ -1,5 +1,5 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes
 import os
 
 TOKEN = os.getenv("7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg")
