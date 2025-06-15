@@ -1,77 +1,90 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
-import os
+question_data = tests_data[current_index]
+    correct_answer = question_data["togri_javob"]
+    
+    feedback_message = ""
+    if user_answer == correct_answer:
+        score += 1
+        feedback_message = "✅ To'g'ri javob!"
+    else:
+        feedback_message = f"❌ Noto'g'ri javob. To'g'risi: {correct_answer}"
+    
+    # Foydalanuvchiga javob haqida qisqa ma'lumot berish
+    await query.edit_message_text(f"{feedback_message}\n") # Javobni ko'rsatish
+    
+    current_index += 1
+    save_user_data_to_db(user_id, current_index, score) # DB ga yangi holatni saqlash
+    
+    # Keyingi savolni yuborish uchun biroz kechikish
+    # import asyncio
+    # await asyncio.sleep(1) # Javobni o'qib olishi uchun 1 soniya kutish
+    
+    return await ask_question(update, context) # Keyingi savolni berish
 
-TOKEN = os.getenv("7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg")
-
-savollar = [
-    {
-        "savol": "Amir Temur qaysi yilda tug‘ilgan?",
-        "variantlar": ["1336", "1402", "1220", "1389"],
-        "togri": "1336"
-    },
-    {
-        "savol": "O‘zbekiston mustaqillikka qachon erishgan?",
-        "variantlar": ["1990", "1991", "1992", "1993"],
-        "togri": "1991"
-    },
-    {
-        "savol": "Buyuk Ipak Yo‘li qaysi qit'adan boshlanadi?",
-        "variantlar": ["Osiyo", "Yevropa", "Afrika", "Avstraliya"],
-        "togri": "Osiyo"
-    }
-]
-
-# Foydalanuvchi holatini saqlash uchun lug'at
-user_states = {}
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Salom! Tarixiy test botiga xush kelibsiz.\n/test buyrug‘i bilan testni boshlang.")
-
-async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Suhbatni bekor qiladi."""
     user_id = update.effective_user.id
-    user_states[user_id] = 0  # 0-indeksli savoldan boshlaymiz
-    await send_question(update, user_states[user_id])
+    delete_user_data_from_db(user_id)
+    await update.message.reply_text("Test bekor qilindi. Yana biror narsa qilasizmi? /start")
+    return ConversationHandler.END
 
-async def send_question(update: Update, question_index):
-    savol = savollar[question_index]
-    tugmalar = [
-        [InlineKeyboardButton(text=variant, callback_data=f"javob|{question_index}|{variant}")]
-        for variant in savol["variantlar"]
-    ]
-    markup = InlineKeyboardMarkup(tugmalar)
-    if update.callback_query:
-        await update.callback_query.message.edit_text(savol["savol"], reply_markup=markup)
-    else:
-        await update.message.reply_text(savol["savol"], reply_markup=markup)
+# --- Umumiy xato handler ---
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Botdagi barcha xatolarni qayta ishlaydi."""
+    logger.warning('Update "%s" caused error "%s"', update, context.error)
+    # try:
+    #     if update.callback_query:
+    #         await update.callback_query.message.reply_text("Kechirasiz, kutilmagan xato yuz berdi. Iltimos, /start ni bosing.")
+    #     elif update.message:
+    #         await update.message.reply_text("Kechirasiz, kutilmagan xato yuz berdi. Iltimos, /start ni bosing.")
+    # except Exception as e:
+    #     logger.error(f"Xato xabarini yuborishda xato: {e}")
 
-async def tugma_javobi(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    user_id = query.from_user.id
 
-    _, indeks, tanlov = query.data.split("|")
-    indeks = int(indeks)
-    togri = savollar[indeks]["togri"]
+# --- Main funksiyasi (Botni ishga tushirish) ---
+def main() -> None:
+    """Botni ishga tushiradi."""
+    # Bot tokenini muhit o'zgaruvchisidan olish
+    TOKEN = os.environ.get("BOT_TOKEN") 
+    if not TOKEN:
+        # Agar muhit o'zgaruvchisi o'rnatilmagan bo'lsa, bu yerga tokeningizni qo'ying (tavsiya etilmaydi, faqat test uchun)
+        logger.warning("BOT_TOKEN muhit o'zgaruvchisi topilmadi. Kod ichidagi token ishlatiladi.")
+        TOKEN = "Sizning_BotFather_Tokeningiz_Bu_Yerga" # TOKENNI BU YERGA QO'YING!
+        
+    if TOKEN == "Sizning_BotFather_Tokeningiz_Bu_Yerga":
+        logger.error("Iltimos, bot tokenini BOT_TOKEN muhit o'zgaruvchisi sifatida sozlang yoki kodga yozing!")
+        exit(1)
 
-    if tanlov == togri:
-        javob_matni = f"✅ To‘g‘ri javob! ({tanlov})"
-    else:
-        javob_matni = f"❌ Noto‘g‘ri. To‘g‘ri javob: {togri}"
+    # Ma'lumotlar bazasini ishga tushirish
+    init_db()
+    # Exceldan test savollarini yuklash
+    load_tests_from_excel(EXCEL_FILE_PATH)
 
-    await query.edit_message_text(javob_matni)
+    application = Application.builder().token(TOKEN).build()
 
-    # Keyingi savolga o'tish
-    user_states[user_id] = indeks + 1
-    if user_states[user_id] < len(savollar):
-        await send_question(update, user_states[user_id])
-    else:
-        await query.message.reply_text("🎉 Test yakunlandi! Rahmat.")
+    # ConversationHandler ni qo'shish
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler("start", start), CommandHandler("test", start_test)],
+        states={
+            # CHOOSING_TEST holatida /test buyrug'ini qabul qilamiz
+            CHOOSING_TEST: [CommandHandler("test", start_test)],
+            # ANSWERING holatida tugmalardan kelgan javoblarni qayta ishlaymiz
+            ANSWERING: [CallbackQueryHandler(handle_answer)],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+        per_user=True, # Har bir foydalanuvchi uchun alohida suhbat holatini boshqarish
+        # per_chat=True, # Agar har bir chat uchun alohida holat kerak bo'lsa
+    )
+    application.add_handler(conv_handler)
 
-app = ApplicationBuilder().token("7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg").build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("test", test))
-app.add_handler(CallbackQueryHandler(tugma_javobi))
+    # --- Qo'shimcha handlerlar (agar kerak bo'lsa) ---
+    # Matnli xabarlar uchun (agar testdan tashqarida bo'lsa)
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, start)) # Har qanday matnga start xabarini berish
 
-print("🤖 Bot ishga tushdi...")
-app.run_polling()
+    # Xato handler
+    application.add_error_handler(error_handler)
+
+    logger.info("Bot ishga tushirilmoqda (polling rejimida)...")
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
+
+if name == "main":
+    main()
