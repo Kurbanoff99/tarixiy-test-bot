@@ -222,7 +222,8 @@ correct_answer = question_data["togri_javob"]
 feedback_message = ""
 if user_answer == correct_answer:
     score += 1
-    feedback_message = "✅ To'g'ri javob!" else:
+    feedback_message = "✅ To'g'ri javob!" 
+    else:
     feedback_message = f"❌ Noto'g'ri javob. To'g'risi: {correct_answer}"
     
     # Javob berilgan xabardagi tugmalarni olib tashlash va javobni ko'rsatish
