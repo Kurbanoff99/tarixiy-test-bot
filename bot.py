@@ -80,9 +80,9 @@ async def check_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Botni ishga tushurish
 if __name__ == '__main__':
     from telegram.ext import ApplicationBuilder
-    TOKEN = "YOUR_BOT_TOKEN"
+    TOKEN = "7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg"
 
-    app = ApplicationBuilder().token(TOKEN).build()
+    app = ApplicationBuilder().token("7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg").build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("test", start_test)],
