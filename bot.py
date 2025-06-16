@@ -11,7 +11,7 @@ user_data = {}
 TEST_PATH = "tests"
 (ANSWER,) = range(1)
 
-# Savollarni yuklovchi funksiya
+# Excel fayldan savollarni yuklash
 def load_questions(filename):
     df = pd.read_excel(filename)
     return df.to_dict("records")
@@ -27,7 +27,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "current_question": 0,
         "correct": 0
     }
-    await update.message.reply_text("Assalomu alaykum! Testni boshlash uchun /test buyrug'ini bering.")
+    await update.message.reply_text("Assalomu alaykum! Testni boshlash uchun /test buyrug‘ini bering.")
 
 # /test komandasi
 async def start_test(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -35,33 +35,34 @@ async def start_test(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = user_data[user_id]
 
     if data["current_file"] >= len(data["files"]):
-        await update.message.reply_text("Barcha testlar tugadi.")
+        await update.message.reply_text("✅ Barcha testlar tugadi.")
         return ConversationHandler.END
 
-    filepath = os.path.join(TEST_PATH, data["files"][data["current_file"]])
-    data["questions"] = load_questions(filepath)
+    filename = os.path.join(TEST_PATH, data["files"][data["current_file"]])
+    data["questions"] = load_questions(filename)
     data["current_question"] = 0
     data["correct"] = 0
+
     return await ask_question(update)
 
-# Savol yuborish
+# Savol yuborish funksiyasi
 async def ask_question(update: Update):
     user_id = update.effective_user.id
     data = user_data[user_id]
 
     if data["current_question"] >= len(data["questions"]):
-        msg = f"Test tugadi. To'g'ri javoblar: {data['correct']}/{len(data['questions'])}"
+        msg = f"📊 Test yakuni:\n✅ To‘g‘ri javoblar: {data['correct']}/{len(data['questions'])}"
         await update.message.reply_text(msg)
         data["current_file"] += 1
         return await start_test(update, None)
 
     q = data["questions"][data["current_question"]]
-    text = f"{q['savol']}\nA) {q['variant_a']}\nB) {q['variant_b']}\nC) {q['variant_c']}"
+    text = f"{q['savol']}\n\nA) {q['variant_a']}\nB) {q['variant_b']}\nC) {q['variant_c']}"
     markup = ReplyKeyboardMarkup([["A", "B", "C"]], one_time_keyboard=True, resize_keyboard=True)
     await update.message.reply_text(text, reply_markup=markup)
     return ANSWER
 
-# Javobni tekshirish
+# Javobni tekshirish funksiyasi
 async def check_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = user_data[user_id]
@@ -74,13 +75,13 @@ async def check_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data["current_question"] += 1
     return await ask_question(update)
 
-# Asosiy
+# Asosiy qism
 if __name__ == "__main__":
-    TOKEN = "7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg"  # <-- tokenni shu yerga qo‘ying
+    TOKEN = "7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg"  # <-- shu yerga bot tokeningizni yozing
 
-    app = ApplicationBuilder().token("7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg").build()
+    app = ApplicationBuilder().token(7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg).build()
 
-    conv = ConversationHandler(
+    conv_handler = ConversationHandler(
         entry_points=[CommandHandler("test", start_test)],
         states={
             ANSWER: [MessageHandler(filters.TEXT & ~filters.COMMAND, check_answer)],
@@ -89,5 +90,6 @@ if __name__ == "__main__":
     )
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(conv)
+    app.add_handler(conv_handler)
+
     app.run_polling()
