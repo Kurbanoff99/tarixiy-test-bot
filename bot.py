@@ -205,7 +205,7 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 user_id = query.from_user.id
 user_answer = query.data
 user_info = get_user_data_from_db(user_id)
-    if not user_info:
+if not user_info:
         await query.edit_message_text("Xato: Test holati topilmadi. Iltimos, testni qayta boshlang /test.")
         return ConversationHandler.END
 
