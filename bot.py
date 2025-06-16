@@ -208,7 +208,6 @@ user_info = get_user_data_from_db(user_id)
 if not user_info:
         await query.edit_message_text("Xato: Test holati topilmadi. Iltimos, testni qayta boshlang /test.")
         return ConversationHandler.END
-
     current_index = user_info["current_question_index"]
     score = user_info["score"]
 
