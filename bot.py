@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 CHOOSING_TEST, ANSWERING = range(2)
 
 # --- Fayl yo'llari ---
-EXCEL_FILE_PATH = "test_savollar.xlsx"
+EXCEL_FILE_PATH = "test_savollar.xlsx, testlar.xlsx"
 DB_NAME = "bot_data.db"
 
 # --- Global o'zgaruvchilar ---
