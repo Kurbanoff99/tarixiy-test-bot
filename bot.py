@@ -34,6 +34,7 @@ CHOOSING_TEST, ANSWERING = range(2)
 # Firestore client va app_id ni global qilib e'lon qilamiz.
 db = None
 APP_ID = None # Canvas yoki muhit o'zgaruvchisidan olinadi
+ADMIN_IDS = [] # Admin user ID'lari ro'yxati
 
 # --- Firestore funksiyalari / Firestore Functions ---
 # Foydalanuvchilarning testdagi holatini Firestore'da saqlash uchun.
@@ -332,6 +333,37 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text("Test bekor qilindi. Boshqa testni boshlash uchun /test buyrug'ini bosing.")
     return ConversationHandler.END
 
+async def admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin foydalanuvchiga xabar yuborish uchun buyruq."""
+    """Command for admin to send a message to a user."""
+    user = update.effective_user
+    if user.id not in ADMIN_IDS:
+        await update.message.reply_text("Sizda bu buyruqni ishlatish huquqi yo'q.")
+        logger.warning(f"Ruxsatsiz urinish: {user.id} foydalanuvchi /admin_reply buyrug'ini ishlatishga urindi.")
+        return
+
+    if not context.args or len(context.args) < 2:
+        await update.message.reply_text(
+            "Foydalanish: `/admin_reply <foydalanuvchi_ID> <xabar_matni>`\n"
+            "Misol: `/admin_reply 123456789 Salom, sizning savolingizga javob berdim.`",
+            parse_mode='Markdown'
+        )
+        return
+
+    try:
+        target_user_id = int(context.args[0])
+        reply_text = " ".join(context.args[1:])
+
+        await context.bot.send_message(chat_id=target_user_id, text=reply_text)
+        await update.message.reply_text(f"Xabar {target_user_id} ga muvaffaqiyatli yuborildi.")
+        logger.info(f"Admin {user.id} dan {target_user_id} ga xabar yuborildi: '{reply_text}'")
+    except ValueError:
+        await update.message.reply_text("Noto'g'ri foydalanuvchi ID formatida. Raqam bo'lishi kerak.")
+    except Exception as e:
+        await update.message.reply_text(f"Xabar yuborishda xato yuz berdi: {e}")
+        logger.error(f"Xabar yuborishda xato: {e}")
+
+
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Botda yuzaga kelgan xatolarni qayd etadi."""
     logger.warning('Xato: "%s" - "%s"', update, context.error)
@@ -340,10 +372,27 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 def main():
     """Botni ishga tushirish uchun asosiy funksiya."""
+    global ADMIN_IDS # ADMIN_IDS ni main() ichida o'zgartirish uchun
+
     TOKEN = os.environ.get("7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg") 
     if not TOKEN:
         logger.error("BOT_TOKEN muhit o'zgaruvchisi o'rnatilmagan. Iltimos, .env faylini yoki muhit o'zgaruvchisini tekshiring.")
         return
+    
+    # Admin ID'larini muhit o'zgaruvchisidan yuklaymiz.
+    # ADMIN_IDS ni vergul bilan ajratilgan string sifatida berish kerak, masalan: "12345,67890"
+    # We load Admin IDs from an environment variable.
+    # ADMIN_IDS should be provided as a comma-separated string, e.g.: "12345,67890"
+    admin_ids_str = os.environ.get("ADMIN_IDS")
+    if admin_ids_str:
+        try:
+            ADMIN_IDS = [int(uid.strip()) for uid in admin_ids_str.split(',')]
+            logger.info(f"Admin ID'lari yuklandi: {ADMIN_IDS}")
+        except ValueError:
+            logger.error("ADMIN_IDS muhit o'zgaruvchisi noto'g'ri formatda. Faqat raqamlarni vergul bilan ajratib kiriting.")
+    else:
+        logger.warning("ADMIN_IDS muhit o'zgaruvchisi o'rnatilmagan. Admin funksiyalari mavjud bo'lmaydi.")
+
 
     init_firestore() # Firestore'ni ishga tushiramiz
 
@@ -351,7 +400,7 @@ def main():
         logger.critical("Firestore ga ulanish muvaffaqiyatsiz tugadi. Bot ishga tushirilmaydi.")
         return
 
-    application = Application.builder().token(TOKEN).build()
+    application = Application.builder().token("7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg").build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start), CommandHandler("test", start_test)], 
@@ -363,6 +412,7 @@ def main():
     )
 
     application.add_handler(conv_handler)
+    application.add_handler(CommandHandler("admin_reply", admin_reply)) # Admin javob berish buyrug'ini qo'shamiz
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, start))
     application.add_error_handler(error_handler) 
 
