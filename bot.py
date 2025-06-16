@@ -1,4 +1,4 @@
-., [17.06.2025 0:55]
+
 import logging
 import os
 import openpyxl
