@@ -199,11 +199,11 @@ async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Foydalanuvchi tugma orqali yuborgan javobini tekshiradi (CallbackQuery)."""
     query = update.callback_query	
-	await query.answer() # Queryni javob bergan deb belgilash, yuklanishni to'xtatadi
+    await query.answer() # Queryni javob bergan deb belgilash, yuklanishni to'xtatadi
 
 
 user_id = query.from_user.id
-	user_answer = query.data # Tugmadagi callback_data
+    user_answer = query.data # Tugmadagi callback_data
     user_info = get_user_data_from_db(user_id)
     if not user_info:
         await query.edit_message_text("Xato: Test holati topilmadi. Iltimos, testni qayta boshlang /test.")
