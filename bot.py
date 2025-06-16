@@ -225,7 +225,7 @@ def main():
     init_db()
     load_tests_from_excel(EXCEL_FILE_PATH)
 
-    application = Application.builder().token(7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg).build()
+    application = Application.builder().token().build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start), CommandHandler("test", start_test)],
