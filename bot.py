@@ -71,7 +71,7 @@ async def check_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return await ask_question(update)
 
 if __name__ == "__main__":
-    app = ApplicationBuilder().token("TOKENINGIZNI_BU_YERGA_QO‘YING").build()
+    app = ApplicationBuilder().token("7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg").build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("test", start_test)],
