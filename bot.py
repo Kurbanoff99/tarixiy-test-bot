@@ -1,98 +1,93 @@
-import logging
 import os
 import pandas as pd
 from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters, ConversationHandler
+from telegram.ext import (
+    ApplicationBuilder, CommandHandler, MessageHandler, filters,
+    ConversationHandler, ContextTypes
+)
 
-# Logging
-logging.basicConfig(level=logging.INFO)
+# Global o'zgaruvchilar
+user_data = {}
+TEST_PATH = "tests"
+(ANSWER,) = range(1)
 
-# Foydalanuvchi holati uchun global o'zgaruvchilar
-user_states = {}
-TEST_DIR = "tests"
-
-# Bosqichlar
-(START_TEST, ANSWERING) = range(2)
-
-# Excel fayldan savollarni yuklaymiz
+# Savollarni yuklovchi funksiya
 def load_questions(filename):
     df = pd.read_excel(filename)
-    return df.to_dict('records')
+    return df.to_dict("records")
 
-# /start komandasi\async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# /start komandasi
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    user_states[user_id] = {
-        "test_files": sorted([f for f in os.listdir(TEST_DIR) if f.endswith(".xlsx")]),
+    files = sorted([f for f in os.listdir(TEST_PATH) if f.endswith(".xlsx")])
+    user_data[user_id] = {
+        "files": files,
         "current_file": 0,
+        "questions": [],
         "current_question": 0,
-        "correct_answers": 0,
-        "questions": []
+        "correct": 0
     }
-    await update.message.reply_text("Assalomu alaykum! Tarixiy test botiga xush kelibsiz!\nBoshlash uchun /test buyrug‘ini bering.")
+    await update.message.reply_text("Assalomu alaykum! Testni boshlash uchun /test buyrug'ini bering.")
 
 # /test komandasi
 async def start_test(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    state = user_states[user_id]
+    data = user_data[user_id]
 
-    if state["current_file"] >= len(state["test_files"]):
-        await update.message.reply_text("Barcha testlar tugadi. Rahmat!")
+    if data["current_file"] >= len(data["files"]):
+        await update.message.reply_text("Barcha testlar tugadi.")
         return ConversationHandler.END
 
-    file_path = os.path.join(TEST_DIR, state["test_files"][state["current_file"]])
-    state["questions"] = load_questions(file_path)
-    state["current_question"] = 0
-    state["correct_answers"] = 0
+    filepath = os.path.join(TEST_PATH, data["files"][data["current_file"]])
+    data["questions"] = load_questions(filepath)
+    data["current_question"] = 0
+    data["correct"] = 0
+    return await ask_question(update)
 
-    return await ask_question(update, context)
-
-# Savolni chiqarish
-async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# Savol yuborish
+async def ask_question(update: Update):
     user_id = update.effective_user.id
-    state = user_states[user_id]
-    questions = state["questions"]
+    data = user_data[user_id]
 
-    if state["current_question"] >= len(questions):
-        await update.message.reply_text(f"Test tugadi. To‘g‘ri javoblar soni: {state['correct_answers']} / {len(questions)}")
-        state["current_file"] += 1
-        return await start_test(update, context)
+    if data["current_question"] >= len(data["questions"]):
+        msg = f"Test tugadi. To'g'ri javoblar: {data['correct']}/{len(data['questions'])}"
+        await update.message.reply_text(msg)
+        data["current_file"] += 1
+        return await start_test(update, None)
 
-    q = questions[state["current_question"]]
-    variants = [q['variant_a'], q['variant_b'], q['variant_c']]
+    q = data["questions"][data["current_question"]]
+    text = f"{q['savol']}\nA) {q['variant_a']}\nB) {q['variant_b']}\nC) {q['variant_c']}"
     markup = ReplyKeyboardMarkup([["A", "B", "C"]], one_time_keyboard=True, resize_keyboard=True)
-
-    await update.message.reply_text(f"{q['savol']}\nA) {q['variant_a']}\nB) {q['variant_b']}\nC) {q['variant_c']}", reply_markup=markup)
-    return ANSWERING
+    await update.message.reply_text(text, reply_markup=markup)
+    return ANSWER
 
 # Javobni tekshirish
 async def check_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    state = user_states[user_id]
-    answer = update.message.text.strip().upper()
+    data = user_data[user_id]
+    user_answer = update.message.text.strip().upper()
+    correct_answer = data["questions"][data["current_question"]]["togrijavob"].strip().upper()
 
-    q = state["questions"][state["current_question"]]
-    if answer == q['togrijavob'].strip().upper():
-        state["correct_answers"] += 1
+    if user_answer == correct_answer:
+        data["correct"] += 1
 
-    state["current_question"] += 1
-    return await ask_question(update, context)
+    data["current_question"] += 1
+    return await ask_question(update)
 
-# Botni ishga tushurish
-if __name__ == '__main__':
-    from telegram.ext import ApplicationBuilder
-    TOKEN = "7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg"
+# Asosiy
+if __name__ == "__main__":
+    TOKEN = "7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg"  # <-- tokenni shu yerga qo‘ying
 
     app = ApplicationBuilder().token("7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg").build()
 
-    conv_handler = ConversationHandler(
+    conv = ConversationHandler(
         entry_points=[CommandHandler("test", start_test)],
         states={
-            ANSWERING: [MessageHandler(filters.TEXT & ~filters.COMMAND, check_answer)]
+            ANSWER: [MessageHandler(filters.TEXT & ~filters.COMMAND, check_answer)],
         },
         fallbacks=[]
     )
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(conv_handler)
-
+    app.add_handler(conv)
     app.run_polling()
