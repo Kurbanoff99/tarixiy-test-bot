@@ -198,7 +198,8 @@ async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Foydalanuvchi tugma orqali yuborgan javobini tekshiradi (CallbackQuery)."""
-    query = update.callback_query	await query.answer() # Queryni javob bergan deb belgilash, yuklanishni to'xtatadi
+    query = update.callback_query	
+	await query.answer() # Queryni javob bergan deb belgilash, yuklanishni to'xtatadi
 
 
 user_id = query.from_user.id
