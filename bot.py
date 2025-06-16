@@ -218,14 +218,14 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 # --- Botni ishga tushirish ---
 def main():
     TOKEN = os.environ.get("BOT_TOKEN") or "7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg"
-    if not TOKEN or "YOUR_TOKEN" in TOKEN:
+    if not TOKEN or "7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg" in TOKEN:
         logger.error("Iltimos, BOT_TOKEN ni to‘g‘ri kiriting.")
         return
 
     init_db()
     load_tests_from_excel(EXCEL_FILE_PATH)
 
-    application = Application.builder().token(TOKEN).build()
+    application = Application.builder().token(7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg).build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start), CommandHandler("test", start_test)],
