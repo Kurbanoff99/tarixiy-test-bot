@@ -2,8 +2,8 @@
 import logging
 import os
 import openpyxl
-import sqlite3
-import asyncio # Yangi import: Asinxron operatsiyalar uchun
+# import sqlite3
+# import asyncio # Yangi import: Asinxron operatsiyalar uchun
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
