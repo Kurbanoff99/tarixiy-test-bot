@@ -209,39 +209,39 @@ if not user_info:
         await query.edit_message_text("Xato: Test holati topilmadi. Iltimos, testni qayta boshlang /test.")
         return ConversationHandler.END
 current_index = user_info["current_question_index"]
-    score = user_info["score"]
+score = user_info["score"]
 
-    if current_index >= len(tests_data):
-        await query.edit_message_text("Test allaqachon tugagan. Yangisini boshlash uchun /test.")
-        delete_user_data_from_db(user_id)
-        return ConversationHandler.END
+if current_index >= len(tests_data):
+    await query.edit_message_text("Test allaqachon tugagan. Yangisini boshlash uchun /test.")
+    delete_user_data_from_db(user_id)
+    return ConversationHandler.END
 
-    question_data = tests_data[current_index]
-    correct_answer = question_data["togri_javob"]
+question_data = tests_data[current_index]
+correct_answer = question_data["togri_javob"]
     
-    feedback_message = ""
-    if user_answer == correct_answer:
-        score += 1
-        feedback_message = "✅ To'g'ri javob!"
+feedback_message = ""
+ if user_answer == correct_answer:
+     score += 1
+     feedback_message = "✅ To'g'ri javob!"
     else:
-        feedback_message = f"❌ Noto'g'ri javob. To'g'risi: {correct_answer}"
+    feedback_message = f"❌ Noto'g'ri javob. To'g'risi: {correct_answer}"
     
     # Javob berilgan xabardagi tugmalarni olib tashlash va javobni ko'rsatish
     # Bu, foydalanuvchi bir savolga ikki marta javob bera olmasligini ta'minlaydi.
-    try:
-        await query.edit_message_reply_markup(reply_markup=None) # Tugmalarni olib tashlash
-        await query.edit_message_text(f"{query.message.text}\n\n{feedback_message}") # Oldingi savol matnini yangilash
-    except Exception as e:
-        logger.error(f"Xabarni tahrirlashda xato: {e}")
-        await query.message.reply_text(feedback_message) # Agar tahrirlashda xato bo'lsa, yangi xabar yuborish
+try:
+     await query.edit_message_reply_markup(reply_markup=None) # Tugmalarni olib tashlash
+     await query.edit_message_text(f"{query.message.text}\n\n{feedback_message}") # Oldingi savol matnini yangilash
+ except Exception as e:
+     logger.error(f"Xabarni tahrirlashda xato: {e}")
+     await query.message.reply_text(feedback_message) # Agar tahrirlashda xato bo'lsa, yangi xabar yuborish
 
-    current_index += 1
-    save_user_data_to_db(user_id, current_index, score)
+ current_index += 1
+save_user_data_to_db(user_id, current_index, score)
     
-    await asyncio.sleep(0.7) # Javobni o'qib olishi uchun biroz kutish
+ await asyncio.sleep(0.7) # Javobni o'qib olishi uchun biroz kutish
 
     # Keyingi savolni yuborish
-    return await ask_question(update, context) # Yangi savolni yuborish
+return await ask_question(update, context) # Yangi savolni yuborish
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Suhbatni bekor qiladi."""
