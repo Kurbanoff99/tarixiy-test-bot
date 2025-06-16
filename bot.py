@@ -109,7 +109,7 @@ def load_tests_from_excel(file_path):
                     "savol": str(question).strip(),
                     "variantlar": [str(o).strip() for o in options],
 
-., [17.06.2025 0:55]
+
 "togri_javob": str(correct_answer).strip()
                 })
         logger.info(f"Exceldan {len(tests_data)} ta savol muvaffaqiyatli yuklandi.")
@@ -201,7 +201,7 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     query = update.callback_query
     await query.answer() # Queryni javob bergan deb belgilash, yuklanishni to'xtatadi
 
-., [17.06.2025 0:55]
+
 user_id = query.from_user.id
     user_answer = query.data # Tugmadagi callback_data
 
@@ -290,7 +290,7 @@ def main() -> None:
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start), CommandHandler("test", start_test)],
 
-., [17.06.2025 0:55]
+
 states={
             # CHOOSING_TEST holatida /test buyrug'ini qabul qilamiz
             CHOOSING_TEST: [CommandHandler("test", start_test)],
