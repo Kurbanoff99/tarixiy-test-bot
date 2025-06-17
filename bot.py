@@ -7,7 +7,7 @@ import openpyxl
 import sqlite3
 import asyncio
 import datetime
-import requests
+# import requests
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
