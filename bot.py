@@ -224,7 +224,7 @@ def main():
     init_db()
     load_tests()
     TOKEN = os.environ.get("7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg")
-    application = Application.builder().token(7775497614:AAFRrodSyDotYX0AMIG7o0ijMXXizcSsbxg).build()
+    application = Application.builder().token(TOKEN).build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
